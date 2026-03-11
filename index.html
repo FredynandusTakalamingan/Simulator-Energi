@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="id" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Energy School Simulator</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&amp;family=Rajdhani:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+@keyframes pulse-glow { 0%, 100% { filter: drop-shadow(0 0 20px currentColor); } 50% { filter: drop-shadow(0 0 40px currentColor); } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes walk { 0% { transform: translateX(-100%); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateX(400%); opacity: 0; } }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+@keyframes fadeOut { 0% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes slideInDown { 0% { transform: translateY(-100%); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.light-on { animation: pulse-glow 2s ease-in-out infinite; }
+.person-walking { animation: walk 3s linear forwards; }
+.float-animation { animation: float 3s ease-in-out infinite; }
+.sensor-blink { animation: blink 1s ease-in-out infinite; }
+.loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 50%, #10b981 100%); display: flex; align-items: center; justify-content: center; z-index: 9999; animation: fadeOut 0.8s ease-out 2.5s forwards; }
+.loading-content { text-align: center; animation: slideInDown 0.6s ease-out; }
+.loading-spinner { width: 80px; height: 80px; border: 8px solid rgba(255,255,255,0.3); border-top: 8px solid white; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 30px; }
+.loading-text { color: white; font-size: 28px; font-weight: bold; margin-bottom: 10px; font-family: 'Orbitron', sans-serif; letter-spacing: 2px; }
+.loading-subtext { color: rgba(255,255,255,0.9); font-size: 16px; letter-spacing: 1px; }
+.app-content { animation: slideInDown 0.8s ease-out 2s; }
+.draggable-person { cursor: grab; user-select: none; }
+.draggable-person:active { cursor: grabbing; }
+body { box-sizing: border-box; }
+</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full bg-gradient-to-br from-blue-50 via-cyan-50 to-emerald-50 text-slate-900 overflow-auto" style="font-family: 'Rajdhani', sans-serif;">
+  <div class="h-full w-full min-h-full">
+   <div class="loading-screen" id="loadingScreen">
+    <div class="loading-content">
+     <div class="loading-spinner"></div>
+     <div class="loading-text">
+      ⚡ SMART ENERGY ⚡
+     </div>
+     <div class="loading-subtext">
+      Sistem Simulator Cerdas Sekolah
+     </div>
+    </div>
+   </div>
+   <div class="app-content">
+    <header class="relative overflow-hidden bg-gradient-to-r from-blue-500 via-cyan-500 to-emerald-500 py-8 px-4 shadow-2xl">
+     <div class="absolute inset-0 opacity-30">
+      <div class="absolute top-0 left-1/4 w-40 h-40 bg-white rounded-full blur-3xl"></div>
+      <div class="absolute bottom-0 right-1/4 w-48 h-48 bg-blue-200 rounded-full blur-3xl"></div>
+     </div>
+     <div class="relative z-10 max-w-7xl mx-auto">
+      <div class="flex items-center justify-center gap-4 flex-wrap">
+       <div class="text-6xl float-animation">
+        ⚡
+       </div>
+       <div>
+        <h1 id="school-title" class="text-3xl md:text-5xl font-black tracking-wider text-white" style="font-family: 'Orbitron', sans-serif;">SMART ENERGY SIMULATOR</h1>
+        <p class="text-blue-100 text-base md:text-lg tracking-widest font-semibold">Sistem Manajemen Energi Cerdas Sekolah</p>
+       </div>
+       <div class="text-6xl float-animation" style="animation-delay: 0.5s;">
+        🏫
+       </div>
+      </div>
+     </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-4 py-8 space-y-10">
+     <div class="text-center">
+      <h2 class="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600" style="font-family: 'Orbitron', sans-serif;">🎯 Simulasi Sensor Lampu Otomatis</h2>
+      <p class="text-slate-600 mt-2 font-semibold">Klik tombol untuk mensimulasikan deteksi sensor gerakan</p>
+     </div>
+     <div class="grid md:grid-cols-2 gap-8">
+      <div class="relative bg-gradient-to-br from-white to-blue-50 rounded-3xl p-6 border-2 border-blue-200 shadow-xl overflow-hidden">
+       <div class="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-full blur-2xl opacity-50"></div>
+       <h3 class="text-xl font-bold text-blue-600 mb-4 flex items-center gap-2" style="font-family: 'Orbitron', sans-serif;"><span class="text-2xl">📚</span> Ruang Kelas</h3>
+       <div class="relative bg-gradient-to-b from-slate-200 to-slate-300 rounded-2xl p-4 mb-4 overflow-hidden" style="min-height: 280px;">
+        <svg viewbox="0 0 400 250" class="w-full h-auto"><defs>
+          <lineargradient id="floorGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+           <stop offset="0%" style="stop-color:#cbd5e1" />
+           <stop offset="100%" style="stop-color:#94a3b8" />
+          </lineargradient>
+          <lineargradient id="wallGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+           <stop offset="0%" style="stop-color:#e0f2fe" />
+           <stop offset="100%" style="stop-color:#bae6fd" />
+          </lineargradient>
+         </defs> <rect x="20" y="20" width="360" height="120" fill="url(#wallGrad1)" rx="5" /> <rect x="100" y="35" width="200" height="80" fill="#fef08a" rx="3" /> <rect x="105" y="40" width="190" height="70" fill="#fef3c7" rx="2" /> <text x="200" y="80" text-anchor="middle" fill="#374151" font-size="14" font-weight="bold">
+          E = mc²
+         </text> <rect x="30" y="40" width="50" height="60" fill="#87ceeb" opacity="0.5" rx="2" /> <rect x="320" y="40" width="50" height="60" fill="#87ceeb" opacity="0.5" rx="2" /> <polygon points="20,140 380,140 400,250 0,250" fill="url(#floorGrad1)" /> <g id="kelasLampu1">
+          <rect x="80" y="10" width="60" height="8" fill="#cbd5e1" rx="2" />
+          <rect id="light1" x="85" y="12" width="50" height="4" fill="#94a3b8" rx="1" />
+         </g> <g id="kelasLampu2">
+          <rect x="170" y="10" width="60" height="8" fill="#cbd5e1" rx="2" />
+          <rect id="light2" x="175" y="12" width="50" height="4" fill="#94a3b8" rx="1" />
+         </g> <g id="kelasLampu3">
+          <rect x="260" y="10" width="60" height="8" fill="#cbd5e1" rx="2" />
+          <rect id="light3" x="265" y="12" width="50" height="4" fill="#94a3b8" rx="1" />
+         </g> <g transform="translate(50, 155)">
+          <rect x="0" y="0" width="50" height="30" fill="#d2691e" rx="3" />
+          <rect x="5" y="-5" width="40" height="5" fill="#ff8c00" />
+         </g> <g transform="translate(120, 155)">
+          <rect x="0" y="0" width="50" height="30" fill="#d2691e" rx="3" />
+          <rect x="5" y="-5" width="40" height="5" fill="#ff8c00" />
+         </g> <g transform="translate(230, 155)">
+          <rect x="0" y="0" width="50" height="30" fill="#d2691e" rx="3" />
+          <rect x="5" y="-5" width="40" height="5" fill="#ff8c00" />
+         </g> <g transform="translate(300, 155)">
+          <rect x="0" y="0" width="50" height="30" fill="#d2691e" rx="3" />
+          <rect x="5" y="-5" width="40" height="5" fill="#ff8c00" />
+         </g> <g transform="translate(70, 200)">
+          <rect x="0" y="0" width="50" height="30" fill="#d2691e" rx="3" />
+          <rect x="5" y="-5" width="40" height="5" fill="#ff8c00" />
+         </g> <g transform="translate(160, 200)">
+          <rect x="0" y="0" width="50" height="30" fill="#d2691e" rx="3" />
+          <rect x="5" y="-5" width="40" height="5" fill="#ff8c00" />
+         </g> <g transform="translate(250, 200)">
+          <rect x="0" y="0" width="50" height="30" fill="#d2691e" rx="3" />
+          <rect x="5" y="-5" width="40" height="5" fill="#ff8c00" />
+         </g> <g id="kelasStudents" class="opacity-0 transition-opacity duration-500">
+          <text x="75" y="150" font-size="20">
+           👨‍🎓
+          </text>
+          <text x="145" y="150" font-size="20">
+           👩‍🎓
+          </text>
+          <text x="255" y="150" font-size="20">
+           👨‍🎓
+          </text>
+          <text x="325" y="150" font-size="20">
+           👩‍🎓
+          </text>
+          <text x="95" y="195" font-size="20">
+           👩‍🎓
+          </text>
+          <text x="185" y="195" font-size="20">
+           👨‍🎓
+          </text>
+          <text x="275" y="195" font-size="20">
+           👩‍🎓
+          </text>
+         </g> <g id="kelasTeacher" class="opacity-0 transition-opacity duration-500">
+          <text x="190" y="130" font-size="28">
+           👩‍🏫
+          </text>
+         </g> <g transform="translate(350, 25)">
+          <circle cx="0" cy="0" r="8" fill="#e5e7eb" stroke="#0ea5e9" stroke-width="2" />
+          <circle id="kelasSensor" cx="0" cy="0" r="4" fill="#cbd5e1" />
+          <text x="0" y="20" text-anchor="middle" fill="#475569" font-size="8">
+           SENSOR
+          </text>
+         </g>
+        </svg>
+       </div>
+       <div class="flex flex-wrap gap-3 justify-center mb-4">
+        <button onclick="aktivitasKelas()" class="px-5 py-3 bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-300 hover:to-emerald-400 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg shadow-green-400/40 text-white flex items-center gap-2"><span>👋</span> Ada Aktivitas</button><button onclick="kosongKelas()" class="px-5 py-3 bg-gradient-to-r from-red-400 to-red-500 hover:from-red-300 hover:to-red-400 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg shadow-red-400/40 text-white flex items-center gap-2"><span>🚪</span> Ruangan Kosong</button>
+       </div>
+       <div id="kelasStatus" class="text-center p-3 rounded-xl bg-blue-100 border-2 border-blue-300">
+        <span class="text-slate-700">⏳ Menunggu input sensor...</span>
+       </div>
+      </div>
+      <div class="relative bg-gradient-to-br from-white to-purple-50 rounded-3xl p-6 border-2 border-purple-200 shadow-xl overflow-hidden">
+       <div class="absolute top-0 right-0 w-32 h-32 bg-purple-100 rounded-full blur-2xl opacity-50"></div>
+       <h3 class="text-xl font-bold text-purple-600 mb-4 flex items-center gap-2" style="font-family: 'Orbitron', sans-serif;"><span class="text-2xl">🔬</span> Laboratorium IPA</h3>
+       <div class="relative bg-gradient-to-b from-slate-200 to-slate-300 rounded-2xl p-4 mb-4 overflow-hidden" style="min-height: 280px;">
+        <svg viewbox="0 0 400 250" class="w-full h-auto"><defs>
+          <lineargradient id="labFloorGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+           <stop offset="0%" style="stop-color:#cbd5e1" />
+           <stop offset="100%" style="stop-color:#94a3b8" />
+          </lineargradient>
+         </defs> <rect x="20" y="20" width="360" height="120" fill="#bfdbfe" rx="5" /> <rect x="140" y="30" width="120" height="70" fill="#dbeafe" rx="2" /> <text x="200" y="55" text-anchor="middle" fill="#0284c7" font-size="8" font-weight="bold">
+          TABEL PERIODIK
+         </text> <g transform="translate(150, 60)">
+          <rect x="0" y="0" width="10" height="10" fill="#ef4444" />
+          <rect x="12" y="0" width="10" height="10" fill="#f97316" />
+          <rect x="24" y="0" width="10" height="10" fill="#eab308" />
+          <rect x="36" y="0" width="10" height="10" fill="#22c55e" />
+          <rect x="48" y="0" width="10" height="10" fill="#3b82f6" />
+          <rect x="60" y="0" width="10" height="10" fill="#8b5cf6" />
+          <rect x="72" y="0" width="10" height="10" fill="#ec4899" />
+          <rect x="84" y="0" width="10" height="10" fill="#06b6d4" />
+          <rect x="0" y="12" width="10" height="10" fill="#14b8a6" />
+          <rect x="12" y="12" width="10" height="10" fill="#f43f5e" />
+          <rect x="24" y="12" width="10" height="10" fill="#a855f7" />
+          <rect x="36" y="12" width="10" height="10" fill="#84cc16" />
+          <rect x="48" y="12" width="10" height="10" fill="#0ea5e9" />
+          <rect x="60" y="12" width="10" height="10" fill="#d946ef" />
+          <rect x="72" y="12" width="10" height="10" fill="#fb923c" />
+          <rect x="84" y="12" width="10" height="10" fill="#4ade80" />
+         </g> <rect x="30" y="35" width="40" height="90" fill="#e5e7eb" rx="2" /><rect x="33" y="40" width="34" height="40" fill="#f3f4f6" /><text x="50" y="65" text-anchor="middle" fill="#ca8a04" font-size="16">
+          ☣️
+         </text> <rect x="33" y="85" width="16" height="35" fill="#d1d5db" /><rect x="51" y="85" width="16" height="35" fill="#d1d5db" /> <g transform="translate(330, 35)">
+          <rect x="0" y="0" width="40" height="90" fill="#f3f4f6" rx="2" />
+          <text x="20" y="55" text-anchor="middle" font-size="35">
+           💀
+          </text>
+         </g> <polygon points="20,140 380,140 400,250 0,250" fill="url(#labFloorGrad1)" /> <g id="labLampu1">
+          <rect x="80" y="10" width="60" height="8" fill="#cbd5e1" rx="2" />
+          <rect id="labLight1" x="85" y="12" width="50" height="4" fill="#94a3b8" rx="1" />
+         </g> <g id="labLampu2">
+          <rect x="170" y="10" width="60" height="8" fill="#cbd5e1" rx="2" />
+          <rect id="labLight2" x="175" y="12" width="50" height="4" fill="#94a3b8" rx="1" />
+         </g> <g id="labLampu3">
+          <rect x="260" y="10" width="60" height="8" fill="#cbd5e1" rx="2" />
+          <rect id="labLight3" x="265" y="12" width="50" height="4" fill="#94a3b8" rx="1" />
+         </g> <g transform="translate(40, 155)">
+          <rect x="0" y="0" width="100" height="35" fill="#f0f9ff" rx="3" />
+          <rect x="5" y="-3" width="90" height="3" fill="#e0f2fe" />
+          <g transform="translate(15, -25)">
+           <path d="M0,20 L5,0 L15,0 L20,20 Z" fill="#bfdbfe" opacity="0.8" />
+           <ellipse cx="10" cy="20" rx="10" ry="3" fill="#7dd3fc" opacity="0.6" />
+          </g>
+          <g transform="translate(45, -20)">
+           <path d="M0,15 L3,0 L12,0 L15,15 Z" fill="#bbf7d0" opacity="0.8" />
+           <ellipse cx="7.5" cy="15" rx="7.5" ry="2" fill="#6ee7b7" opacity="0.6" />
+          </g>
+          <g transform="translate(70, -28)">
+           <path d="M0,23 L5,0 L15,0 L20,23 Z" fill="#fecaca" opacity="0.8" />
+           <ellipse cx="10" cy="23" rx="10" ry="3" fill="#fca5a5" opacity="0.6" />
+          </g>
+         </g> <g transform="translate(160, 155)">
+          <rect x="0" y="0" width="80" height="35" fill="#f0f9ff" rx="3" />
+          <rect x="5" y="-3" width="70" height="3" fill="#e0f2fe" />
+          <g transform="translate(25, -35)">
+           <rect x="10" y="25" width="15" height="10" fill="#d1d5db" />
+           <rect x="12" y="5" width="4" height="20" fill="#e5e7eb" />
+           <circle cx="14" cy="5" r="6" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1" />
+           <rect x="5" y="30" width="25" height="5" fill="#d1d5db" rx="1" />
+          </g>
+         </g> <g transform="translate(260, 155)">
+          <rect x="0" y="0" width="100" height="35" fill="#f0f9ff" rx="3" />
+          <rect x="5" y="-3" width="90" height="3" fill="#e0f2fe" />
+          <g transform="translate(20, -25)">
+           <rect x="0" y="0" width="4" height="20" fill="#fef3c7" opacity="0.9" rx="1" />
+           <rect x="8" y="0" width="4" height="20" fill="#a5f3fc" opacity="0.9" rx="1" />
+           <rect x="16" y="0" width="4" height="20" fill="#c4b5fd" opacity="0.9" rx="1" />
+           <rect x="24" y="0" width="4" height="20" fill="#fca5a5" opacity="0.9" rx="1" />
+           <rect x="32" y="0" width="4" height="20" fill="#86efac" opacity="0.9" rx="1" />
+          </g>
+          <g transform="translate(65, -20)">
+           <rect x="5" y="10" width="10" height="10" fill="#cbd5e1" />
+           <rect x="8" y="5" width="4" height="5" fill="#e5e7eb" />
+           <ellipse id="labFlame" cx="10" cy="3" rx="4" ry="5" fill="#94a3b8" class="transition-all duration-300" />
+          </g>
+         </g> <g id="labScientists" class="opacity-0 transition-opacity duration-500">
+          <text x="70" y="150" font-size="24">
+           👨‍🔬
+          </text>
+          <text x="190" y="150" font-size="24">
+           👩‍🔬
+          </text>
+          <text x="300" y="150" font-size="24">
+           🧑‍🔬
+          </text>
+         </g> <g transform="translate(350, 25)">
+          <circle cx="0" cy="0" r="8" fill="#e5e7eb" stroke="#a855f7" stroke-width="2" />
+          <circle id="labSensor" cx="0" cy="0" r="4" fill="#cbd5e1" />
+          <text x="0" y="20" text-anchor="middle" fill="#475569" font-size="8">
+           SENSOR
+          </text>
+         </g>
+        </svg>
+       </div>
+       <div class="flex flex-wrap gap-3 justify-center mb-4">
+        <button onclick="aktivitasLab()" class="px-5 py-3 bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-300 hover:to-emerald-400 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg shadow-green-400/40 text-white flex items-center gap-2"><span>🧪</span> Ada Aktivitas</button><button onclick="kosongLab()" class="px-5 py-3 bg-gradient-to-r from-red-400 to-red-500 hover:from-red-300 hover:to-red-400 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg shadow-red-400/40 text-white flex items-center gap-2"><span>🚪</span> Ruangan Kosong</button>
+       </div>
+       <div id="labStatus" class="text-center p-3 rounded-xl bg-purple-100 border-2 border-purple-300">
+        <span class="text-slate-700">⏳ Menunggu input sensor...</span>
+       </div>
+      </div>
+     </div>
+     <div class="text-center mt-12">
+      <h2 class="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-orange-600" style="font-family: 'Orbitron', sans-serif;">🚶 Lorong Sekolah - Drag Orang Untuk Test Sensor</h2>
+      <p class="text-slate-600 mb-6 font-semibold">Drag emoji 🚶 ke lorong untuk melihat lampu menyala otomatis!</p>
+     </div>
+     <div class="relative bg-gradient-to-br from-white to-amber-50 rounded-3xl p-6 border-2 border-amber-200 shadow-xl overflow-hidden">
+      <div class="absolute top-0 left-1/2 w-64 h-64 bg-amber-100 rounded-full blur-3xl opacity-50 -translate-x-1/2"></div>
+      <div class="relative rounded-2xl overflow-hidden mb-6" style="perspective: 800px;">
+       <svg id="corridorSvg" viewbox="0 0 800 350" class="w-full h-auto">
+        <defs>
+         <lineargradient id="corridorWall1" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#dbeafe" />
+          <stop offset="100%" style="stop-color:#bfdbfe" />
+         </lineargradient>
+         <lineargradient id="corridorFloor1" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#e5e7eb" />
+          <stop offset="100%" style="stop-color:#cbd5e1" />
+         </lineargradient>
+         <lineargradient id="corridorCeiling1" x1="0%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" style="stop-color:#f3f4f6" />
+          <stop offset="100%" style="stop-color:#e5e7eb" />
+         </lineargradient>
+        </defs> <polygon points="0,50 200,100 200,280 0,350" fill="url(#corridorWall1)" /> <polygon points="800,50 600,100 600,280 800,350" fill="url(#corridorWall1)" /> <polygon points="0,350 200,280 600,280 800,350" fill="url(#corridorFloor1)" /> <line x1="100" y1="315" x2="300" y2="280" stroke="#bae6fd" stroke-width="1" /><line x1="200" y1="350" x2="350" y2="280" stroke="#bae6fd" stroke-width="1" /><line x1="400" y1="350" x2="400" y2="280" stroke="#bae6fd" stroke-width="1" /><line x1="600" y1="350" x2="450" y2="280" stroke="#bae6fd" stroke-width="1" /><line x1="700" y1="315" x2="500" y2="280" stroke="#bae6fd" stroke-width="1" /> <polygon points="0,50 200,100 600,100 800,50" fill="url(#corridorCeiling1)" /> <rect x="200" y="100" width="400" height="180" fill="#f0f9ff" /> <rect x="350" y="150" width="100" height="130" fill="#d2691e" rx="3" /><circle cx="430" cy="215" r="5" fill="#fbbf24" /><text x="400" y="140" text-anchor="middle" fill="#22c55e" font-size="12" font-weight="bold">
+         EXIT →
+        </text> <g transform="translate(50, 120)">
+         <rect x="0" y="0" width="60" height="100" fill="#8b6914" rx="2" transform="skewY(15)" />
+         <circle cx="50" cy="50" r="4" fill="#fbbf24" transform="skewY(15)" />
+         <text x="30" y="-10" text-anchor="middle" fill="#64748b" font-size="10">
+          7A
+         </text>
+        </g> <g transform="translate(120, 140)">
+         <rect x="0" y="0" width="50" height="85" fill="#8b6914" rx="2" transform="skewY(10)" />
+         <circle cx="42" cy="42" r="3" fill="#fbbf24" transform="skewY(10)" />
+         <text x="25" y="-10" text-anchor="middle" fill="#64748b" font-size="9">
+          7B
+         </text>
+        </g> <g transform="translate(690, 120)">
+         <rect x="0" y="0" width="60" height="100" fill="#8b6914" rx="2" transform="skewY(-15)" />
+         <circle cx="10" cy="50" r="4" fill="#fbbf24" transform="skewY(-15)" />
+         <text x="30" y="-10" text-anchor="middle" fill="#64748b" font-size="10">
+          8A
+         </text>
+        </g> <g transform="translate(630, 140)">
+         <rect x="0" y="0" width="50" height="85" fill="#8b6914" rx="2" transform="skewY(-10)" />
+         <circle cx="8" cy="42" r="3" fill="#fbbf24" transform="skewY(-10)" />
+         <text x="25" y="-10" text-anchor="middle" fill="#64748b" font-size="9">
+          8B
+         </text>
+        </g> <g transform="translate(30, 250)">
+         <rect x="0" y="0" width="25" height="60" fill="#3b82f6" rx="1" transform="skewY(25)" />
+         <rect x="30" y="0" width="25" height="60" fill="#2563eb" rx="1" transform="skewY(25)" />
+         <rect x="60" y="0" width="25" height="60" fill="#3b82f6" rx="1" transform="skewY(20)" />
+        </g> <g transform="translate(685, 250)">
+         <rect x="0" y="0" width="25" height="60" fill="#3b82f6" rx="1" transform="skewY(-25)" />
+         <rect x="30" y="0" width="25" height="60" fill="#2563eb" rx="1" transform="skewY(-25)" />
+         <rect x="60" y="0" width="25" height="60" fill="#3b82f6" rx="1" transform="skewY(-20)" />
+        </g> <g id="corridorLight1">
+         <rect x="250" y="85" width="80" height="12" fill="#e5e7eb" rx="2" />
+         <rect id="cLight1" x="255" y="88" width="70" height="6" fill="#d1d5db" rx="1" />
+        </g> <g id="corridorLight2">
+         <rect x="360" y="85" width="80" height="12" fill="#e5e7eb" rx="2" />
+         <rect id="cLight2" x="365" y="88" width="70" height="6" fill="#d1d5db" rx="1" />
+        </g> <g id="corridorLight3">
+         <rect x="470" y="85" width="80" height="12" fill="#e5e7eb" rx="2" />
+         <rect id="cLight3" x="475" y="88" width="70" height="6" fill="#d1d5db" rx="1" />
+        </g> <g transform="translate(290, 105)">
+         <circle cx="0" cy="0" r="6" fill="#f3f4f6" stroke="#f59e0b" stroke-width="1.5" />
+         <circle id="cSensor1" cx="0" cy="0" r="3" fill="#e5e7eb" />
+        </g> <g transform="translate(400, 105)">
+         <circle cx="0" cy="0" r="6" fill="#f3f4f6" stroke="#f59e0b" stroke-width="1.5" />
+         <circle id="cSensor2" cx="0" cy="0" r="3" fill="#e5e7eb" />
+        </g> <g transform="translate(510, 105)">
+         <circle cx="0" cy="0" r="6" fill="#f3f4f6" stroke="#f59e0b" stroke-width="1.5" />
+         <circle id="cSensor3" cx="0" cy="0" r="3" fill="#e5e7eb" />
+        </g>
+       </svg>
+       <div class="absolute bottom-16 left-8 text-6xl draggable-person cursor-grab active:cursor-grabbing" id="draggablePerson" draggable="true" style="user-select: none; -webkit-user-select: none;">
+        🚶
+       </div>
+      </div>
+      <div class="flex flex-wrap gap-4 justify-center mb-4">
+       <button onclick="lorongKosong()" class="px-6 py-3 bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-400 hover:to-slate-500 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg shadow-slate-500/30 text-white flex items-center gap-2"><span>💤</span> Reset Semua Lampu</button>
+      </div>
+      <div id="corridorStatus" class="text-center p-3 rounded-xl bg-amber-100 border-2 border-amber-300">
+       <span class="text-slate-700">💡 Drag emoji 🚶 ke lorong untuk mengaktifkan sensor!</span>
+      </div>
+     </div>
+     <div class="text-center mt-12">
+      <h2 class="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-600" style="font-family: 'Orbitron', sans-serif;">⚙️ Kalkulator Daya Listrik</h2>
+      <p class="text-slate-600 mb-6 font-semibold">Hitung konsumsi energi dan estimasi biaya listrik bulanan</p>
+     </div>
+     <div class="bg-gradient-to-br from-white to-green-50 rounded-3xl p-6 border-2 border-green-200 shadow-xl">
+      <div class="grid md:grid-cols-4 gap-4 mb-6">
+       <div class="bg-gradient-to-br from-green-100 to-emerald-100 rounded-2xl p-4 border border-green-300">
+        <label class="text-green-700 text-sm font-semibold block mb-2">Daya Lampu (Watt)</label><input type="number" id="lampPower" value="20" class="w-full px-3 py-2 border-2 border-green-300 rounded-lg focus:outline-none focus:border-green-500">
+       </div>
+       <div class="bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl p-4 border border-blue-300">
+        <label class="text-blue-700 text-sm font-semibold block mb-2">Jam Per Hari</label><input type="number" id="dailyHours" value="8" class="w-full px-3 py-2 border-2 border-blue-300 rounded-lg focus:outline-none focus:border-blue-500">
+       </div>
+       <div class="bg-gradient-to-br from-yellow-100 to-amber-100 rounded-2xl p-4 border border-yellow-300">
+        <label class="text-yellow-700 text-sm font-semibold block mb-2">Hari Per Bulan</label><input type="number" id="daysPerMonth" value="25" class="w-full px-3 py-2 border-2 border-yellow-300 rounded-lg focus:outline-none focus:border-yellow-500">
+       </div>
+       <div class="bg-gradient-to-br from-red-100 to-pink-100 rounded-2xl p-4 border border-red-300">
+        <label class="text-red-700 text-sm font-semibold block mb-2">Tarif (Rp/kWh)</label><input type="number" id="electricRate" value="1500" class="w-full px-3 py-2 border-2 border-red-300 rounded-lg focus:outline-none focus:border-red-500">
+       </div>
+      </div><button onclick="hitungEnergi()" class="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg shadow-green-500/40 text-white text-lg mb-6">🔢 Hitung Konsumsi Energi</button>
+      <div class="grid md:grid-cols-4 gap-4">
+       <div class="bg-gradient-to-br from-green-900/10 to-green-800/10 rounded-2xl p-4 border-2 border-green-300">
+        <div class="text-green-700 text-sm font-semibold">
+         Daya Harian
+        </div>
+        <div class="text-2xl font-black text-green-600" style="font-family: 'Orbitron', sans-serif;" id="dailyPower">
+         0 Wh
+        </div>
+       </div>
+       <div class="bg-gradient-to-br from-blue-900/10 to-blue-800/10 rounded-2xl p-4 border-2 border-blue-300">
+        <div class="text-blue-700 text-sm font-semibold">
+         Energi Bulanan
+        </div>
+        <div class="text-2xl font-black text-blue-600" style="font-family: 'Orbitron', sans-serif;" id="monthlyEnergy">
+         0 kWh
+        </div>
+       </div>
+       <div class="bg-gradient-to-br from-yellow-900/10 to-yellow-800/10 rounded-2xl p-4 border-2 border-yellow-300">
+        <div class="text-yellow-700 text-sm font-semibold">
+         Biaya Bulanan
+        </div>
+        <div class="text-2xl font-black text-yellow-600" style="font-family: 'Orbitron', sans-serif;" id="monthlyCost">
+         Rp 0
+        </div>
+       </div>
+       <div class="bg-gradient-to-br from-purple-900/10 to-purple-800/10 rounded-2xl p-4 border-2 border-purple-300">
+        <div class="text-purple-700 text-sm font-semibold">
+         Biaya Tahunan
+        </div>
+        <div class="text-2xl font-black text-purple-600" style="font-family: 'Orbitron', sans-serif;" id="yearlyCost">
+         Rp 0
+        </div>
+       </div>
+      </div>
+     </div>
+     <div class="text-center mt-12">
+      <h2 class="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600" style="font-family: 'Orbitron', sans-serif;">📊 Perbandingan Sistem</h2>
+      <p class="text-slate-600 mb-6 font-semibold">Efisiensi energi Manual vs Sensor Otomatis</p>
+     </div>
+     <div class="bg-gradient-to-br from-white to-blue-50 rounded-3xl p-6 border-2 border-blue-200 shadow-xl">
+      <div class="grid md:grid-cols-3 gap-4 mb-6">
+       <div class="bg-gradient-to-br from-red-100 to-red-50 rounded-2xl p-4 border border-red-300">
+        <div class="text-red-700 text-sm font-semibold">
+         Sistem Manual
+        </div>
+        <div class="text-3xl font-black text-red-600" style="font-family: 'Orbitron', sans-serif;">
+         120 <span class="text-lg">kWh</span>
+        </div>
+        <div class="text-red-600 text-xs">
+         per bulan
+        </div>
+       </div>
+       <div class="bg-gradient-to-br from-green-100 to-green-50 rounded-2xl p-4 border border-green-300">
+        <div class="text-green-700 text-sm font-semibold">
+         Sistem Sensor
+        </div>
+        <div class="text-3xl font-black text-green-600" style="font-family: 'Orbitron', sans-serif;">
+         70 <span class="text-lg">kWh</span>
+        </div>
+        <div class="text-green-600 text-xs">
+         per bulan
+        </div>
+       </div>
+       <div class="bg-gradient-to-br from-cyan-100 to-cyan-50 rounded-2xl p-4 border border-cyan-300">
+        <div class="text-cyan-700 text-sm font-semibold">
+         💰 Penghematan
+        </div>
+        <div class="text-3xl font-black text-cyan-600" style="font-family: 'Orbitron', sans-serif;">
+         41.7<span class="text-lg">%</span>
+        </div>
+        <div class="text-cyan-600 text-xs">
+         lebih hemat
+        </div>
+       </div>
+      </div>
+      <div class="bg-white rounded-2xl p-4 shadow-md">
+       <canvas id="energyChart" height="80"></canvas>
+      </div>
+     </div>
+     <div class="bg-gradient-to-r from-blue-100 to-green-100 rounded-3xl p-6 border-2 border-blue-300 mt-8">
+      <h3 class="text-xl font-bold text-blue-700 mb-4 flex items-center gap-2" style="font-family: 'Orbitron', sans-serif;">💡 Cara Kerja Sensor Pintar</h3>
+      <div class="grid md:grid-cols-3 gap-4 text-sm">
+       <div class="flex items-start gap-3">
+        <span class="text-3xl">📡</span>
+        <div>
+         <div class="font-bold text-slate-800">
+          Deteksi Gerakan
+         </div>
+         <div class="text-slate-700">
+          Sensor PIR mendeteksi gerakan inframerah dari tubuh manusia
+         </div>
+        </div>
+       </div>
+       <div class="flex items-start gap-3">
+        <span class="text-3xl">⚡</span>
+        <div>
+         <div class="font-bold text-slate-800">
+          Respon Otomatis
+         </div>
+         <div class="text-slate-700">
+          Lampu menyala otomatis saat ada aktivitas terdeteksi
+         </div>
+        </div>
+       </div>
+       <div class="flex items-start gap-3">
+        <span class="text-3xl">🌙</span>
+        <div>
+         <div class="font-bold text-slate-800">
+          Hemat Energi
+         </div>
+         <div class="text-slate-700">
+          Lampu mati otomatis saat ruangan kosong
+         </div>
+        </div>
+       </div>
+      </div>
+     </div>
+    </main>
+    <footer class="text-center py-8 text-slate-600 text-sm border-t-2 border-blue-200 mt-8 bg-gradient-to-r from-blue-50 to-cyan-50">
+     <p class="font-semibold">🏫 Smart Energy School Simulator | Proyek Hemat Energi Cerdas Sekolah</p>
+     <p class="text-xs mt-2">Simulasi sensor otomatis untuk manajemen energi yang lebih efisien</p>
+    </footer>
+   </div>
+  </div>
+  <script>
+const defaultConfig = { school_name: "SMART ENERGY SIMULATOR", lamp_power: "20", daily_hours: "8", electricity_rate: "1500" };
+async function initApp() {
+if (window.elementSdk) {
+await window.elementSdk.init({
+defaultConfig,
+onConfigChange: async (config) => {
+const title = document.getElementById('school-title');
+if (title) title.textContent = config.school_name || defaultConfig.school_name;
+if (config.lamp_power) document.getElementById('lampPower').value = config.lamp_power;
+if (config.daily_hours) document.getElementById('dailyHours').value = config.daily_hours;
+if (config.electricity_rate) document.getElementById('electricRate').value = config.electricity_rate;
+},
+mapToCapabilities: () => ({ recolorables: [], borderables: [], fontEditable: undefined, fontSizeable: undefined }),
+mapToEditPanelValues: (config) => new Map([
+["school_name", config.school_name || defaultConfig.school_name],
+["lamp_power", config.lamp_power || defaultConfig.lamp_power],
+["daily_hours", config.daily_hours || defaultConfig.daily_hours],
+["electricity_rate", config.electricity_rate || defaultConfig.electricity_rate]
+])
+});
+}
+initChart();
+setupDragDrop();
+}
+function aktivitasKelas() {
+document.getElementById('light1').setAttribute('fill', '#fef08a');
+document.getElementById('light2').setAttribute('fill', '#fef08a');
+document.getElementById('light3').setAttribute('fill', '#fef08a');
+['light1', 'light2', 'light3'].forEach(id => document.getElementById(id).style.filter = 'drop-shadow(0 0 10px #fef08a)');
+document.getElementById('kelasSensor').setAttribute('fill', '#22c55e');
+document.getElementById('kelasSensor').classList.add('sensor-blink');
+document.getElementById('kelasStudents').classList.remove('opacity-0');
+document.getElementById('kelasTeacher').classList.remove('opacity-0');
+document.getElementById('kelasStatus').innerHTML = '<span class="text-green-600 font-bold">✅ Sensor mendeteksi aktivitas!</span><br><span class="text-blue-600">→ Lampu MENYALA otomatis</span>';
+}
+function kosongKelas() {
+['light1', 'light2', 'light3'].forEach(id => {
+document.getElementById(id).setAttribute('fill', '#94a3b8');
+document.getElementById(id).style.filter = 'none';
+});
+document.getElementById('kelasSensor').setAttribute('fill', '#cbd5e1');
+document.getElementById('kelasSensor').classList.remove('sensor-blink');
+document.getElementById('kelasStudents').classList.add('opacity-0');
+document.getElementById('kelasTeacher').classList.add('opacity-0');
+document.getElementById('kelasStatus').innerHTML = '<span class="text-red-600 font-bold">🚪 Ruangan kosong</span><br><span class="text-amber-600">→ Lampu MATI otomatis</span>';
+}
+function aktivitasLab() {
+['labLight1', 'labLight2', 'labLight3'].forEach(id => {
+document.getElementById(id).setAttribute('fill', '#e9d5ff');
+document.getElementById(id).style.filter = 'drop-shadow(0 0 10px #e9d5ff)';
+});
+document.getElementById('labSensor').setAttribute('fill', '#22c55e');
+document.getElementById('labSensor').classList.add('sensor-blink');
+document.getElementById('labFlame').setAttribute('fill', '#f97316');
+document.getElementById('labFlame').style.filter = 'drop-shadow(0 0 5px #f97316)';
+document.getElementById('labScientists').classList.remove('opacity-0');
+document.getElementById('labStatus').innerHTML = '<span class="text-green-600 font-bold">🔬 Aktivitas terdeteksi!</span><br><span class="text-purple-600">→ Lampu & peralatan AKTIF</span>';
+}
+function kosongLab() {
+['labLight1', 'labLight2', 'labLight3'].forEach(id => {
+document.getElementById(id).setAttribute('fill', '#94a3b8');
+document.getElementById(id).style.filter = 'none';
+});
+document.getElementById('labSensor').setAttribute('fill', '#cbd5e1');
+document.getElementById('labSensor').classList.remove('sensor-blink');
+document.getElementById('labFlame').setAttribute('fill', '#94a3b8');
+document.getElementById('labFlame').style.filter = 'none';
+document.getElementById('labScientists').classList.add('opacity-0');
+document.getElementById('labStatus').innerHTML = '<span class="text-red-600 font-bold">🚪 Lab kosong</span><br><span class="text-amber-600">→ Semua peralatan MATI</span>';
+}
+function lorongKosong() {
+['cLight1', 'cLight2', 'cLight3'].forEach(id => {
+document.getElementById(id).setAttribute('fill', '#d1d5db');
+document.getElementById(id).style.filter = 'none';
+});
+['cSensor1', 'cSensor2', 'cSensor3'].forEach(id => document.getElementById(id).setAttribute('fill', '#e5e7eb'));
+document.getElementById('corridorStatus').innerHTML = '<span class="text-slate-700">💤 Semua lampu mati - mode hemat energi aktif</span>';
+}
+function setupDragDrop() {
+const person = document.getElementById('draggablePerson');
+const svg = document.getElementById('corridorSvg');
+person.addEventListener('dragstart', (e) => e.dataTransfer.effectAllowed = 'move');
+svg.addEventListener('dragover', (e) => e.preventDefault());
+svg.addEventListener('drop', (e) => {
+e.preventDefault();
+const rect = svg.getBoundingClientRect();
+const x = e.clientX - rect.left;
+const y = e.clientY - rect.top;
+activateSensorsBasedOnPosition(x, y);
+document.getElementById('corridorStatus').innerHTML = '<span class="text-amber-700 font-bold">🚶 Sensor terdeteksi!</span><br><span class="text-cyan-600">→ Lampu menyala berurutan</span>';
+setTimeout(lorongKosong, 3000);
+});
+}
+function activateSensorsBasedOnPosition(x, y) {
+if (x < 300) {
+['cLight1', 'cSensor1'].forEach(id => {
+document.getElementById(id).setAttribute(id.includes('Light') ? 'id' === 'cLight1' ? 'fill' : '' : 'fill', '#fde68a');
+if (id.includes('Light')) document.getElementById(id).style.filter = 'drop-shadow(0 0 15px #fde68a)';
+});
+document.getElementById('cLight1').setAttribute('fill', '#fde68a');
+document.getElementById('cLight1').style.filter = 'drop-shadow(0 0 15px #fde68a)';
+document.getElementById('cSensor1').setAttribute('fill', '#22c55e');
+setTimeout(() => { document.getElementById('cLight2').setAttribute('fill', '#fde68a'); document.getElementById('cLight2').style.filter = 'drop-shadow(0 0 15px #fde68a)'; document.getElementById('cSensor2').setAttribute('fill', '#22c55e'); }, 300);
+setTimeout(() => { document.getElementById('cLight3').setAttribute('fill', '#fde68a'); document.getElementById('cLight3').style.filter = 'drop-shadow(0 0 15px #fde68a)'; document.getElementById('cSensor3').setAttribute('fill', '#22c55e'); }, 600);
+} else if (x < 600) {
+document.getElementById('cLight2').setAttribute('fill', '#fde68a');
+document.getElementById('cLight2').style.filter = 'drop-shadow(0 0 15px #fde68a)';
+document.getElementById('cSensor2').setAttribute('fill', '#22c55e');
+setTimeout(() => { document.getElementById('cLight1').setAttribute('fill', '#fde68a'); document.getElementById('cLight1').style.filter = 'drop-shadow(0 0 15px #fde68a)'; document.getElementById('cSensor1').setAttribute('fill', '#22c55e'); }, 300);
+setTimeout(() => { document.getElementById('cLight3').setAttribute('fill', '#fde68a'); document.getElementById('cLight3').style.filter = 'drop-shadow(0 0 15px #fde68a)'; document.getElementById('cSensor3').setAttribute('fill', '#22c55e'); }, 300);
+} else {
+document.getElementById('cLight3').setAttribute('fill', '#fde68a');
+document.getElementById('cLight3').style.filter = 'drop-shadow(0 0 15px #fde68a)';
+document.getElementById('cSensor3').setAttribute('fill', '#22c55e');
+setTimeout(() => { document.getElementById('cLight2').setAttribute('fill', '#fde68a'); document.getElementById('cLight2').style.filter = 'drop-shadow(0 0 15px #fde68a)'; document.getElementById('cSensor2').setAttribute('fill', '#22c55e'); }, 300);
+setTimeout(() => { document.getElementById('cLight1').setAttribute('fill', '#fde68a'); document.getElementById('cLight1').style.filter = 'drop-shadow(0 0 15px #fde68a)'; document.getElementById('cSensor1').setAttribute('fill', '#22c55e'); }, 600);
+}
+}
+function hitungEnergi() {
+const power = parseFloat(document.getElementById('lampPower').value) || 20;
+const hours = parseFloat(document.getElementById('dailyHours').value) || 8;
+const days = parseFloat(document.getElementById('daysPerMonth').value) || 25;
+const rate = parseFloat(document.getElementById('electricRate').value) || 1500;
+const dailyWh = power * hours;
+const monthlyKwh = (dailyWh * days) / 1000;
+const monthlyCost = monthlyKwh * rate;
+const yearlyCost = monthlyCost * 12;
+document.getElementById('dailyPower').textContent = dailyWh.toLocaleString('id-ID') + ' Wh';
+document.getElementById('monthlyEnergy').textContent = monthlyKwh.toLocaleString('id-ID', { maximumFractionDigits: 2 }) + ' kWh';
+document.getElementById('monthlyCost').textContent = 'Rp ' + monthlyCost.toLocaleString('id-ID', { maximumFractionDigits: 0 });
+document.getElementById('yearlyCost').textContent = 'Rp ' + yearlyCost.toLocaleString('id-ID', { maximumFractionDigits: 0 });
+}
+function initChart() {
+const ctx = document.getElementById('energyChart').getContext('2d');
+new Chart(ctx, {
+type: 'bar',
+data: {
+labels: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni'],
+datasets: [
+{ label: 'Sistem Manual (kWh)', data: [120, 115, 125, 118, 122, 120], backgroundColor: 'rgba(239, 68, 68, 0.8)', borderColor: 'rgba(239, 68, 68, 1)', borderWidth: 2, borderRadius: 8 },
+{ label: 'Sistem Sensor (kWh)', data: [70, 68, 72, 65, 71, 70], backgroundColor: 'rgba(34, 197, 94, 0.8)', borderColor: 'rgba(34, 197, 94, 1)', borderWidth: 2, borderRadius: 8 }
+]
+},
+options: {
+responsive: true,
+plugins: {
+legend: { position: 'top', labels: { font: { size: 12, weight: 'bold' }, padding: 20 } },
+title: { display: true, text: 'Perbandingan Konsumsi Energi Bulanan', font: { size: 16, weight: 'bold' }, padding: 20 }
+},
+scales: {
+y: { beginAtZero: true, title: { display: true, text: 'Konsumsi (kWh)', font: { weight: 'bold' } }, grid: { color: 'rgba(0, 0, 0, 0.1)' } },
+x: { grid: { display: false } }
+}
+}
+});
+}
+initApp();
+</script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9da9b82a153dce0e',t:'MTc3MzIyMzMwMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
