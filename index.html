@@ -1,141 +1,494 @@
 <!doctype html>
 <html lang="id" class="h-full">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Simulasi Lampu Ruang Kelas</title>
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulasi Lampu Ruang Kelas</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Plus Jakarta Sans', sans-serif; }
 
-<script src="https://cdn.tailwindcss.com/3.4.17"></script>
-<script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-<style>
-*{font-family:'Plus Jakarta Sans',sans-serif;}
-body{background:#0f1729;color:white;text-align:center;padding:40px}
-button{padding:10px 20px;border-radius:10px;margin:5px;cursor:pointer}
-</style>
-</head>
-
-<body>
-
-<!-- OPENING -->
-<div id="opening-screen">
-  <h1>Simulasi Energi Listrik</h1>
-  <p>Pilih Mode Simulasi</p>
-
-  <!-- FITUR BARU -->
-  <button onclick="selectMode('manual')" style="background:#63b3ed;">Mode Manual</button>
-  <button onclick="selectMode('auto')" style="background:#48bb78;">Mode Sensor Otomatis</button>
-</div>
-
-<!-- APP -->
-<div id="app-wrapper" style="display:none">
-
-<h2 id="mode-text"></h2>
-
-<!-- SENSOR BUTTON -->
-<button id="sensor-btn" onclick="triggerSensor()" style="display:none;background:#48bb78;">
-  Gerakkan Objek (Sensor)
-</button>
-
-<hr>
-
-<!-- LAMPU -->
-<div id="lamp-container"></div>
-
-<h3 id="total"></h3>
-
-</div>
-
-<script>
-
-// ================= DATA =================
-const TARIFF = 1444.70;
-const DAYS = 30;
-
-let mode = "manual";
-
-const lamps = [
-  {name:"Lampu 1", power:40, hours:8, on:true},
-  {name:"Lampu 2", power:40, hours:8, on:true},
-  {name:"Lampu 3", power:40, hours:6, on:true},
-  {name:"Lampu 4", power:40, hours:6, on:false}
-];
-
-// ================= MODE =================
-function selectMode(m){
-  mode = m;
-  startSimulation();
-}
-
-function startSimulation(){
-  document.getElementById("opening-screen").style.display="none";
-  document.getElementById("app-wrapper").style.display="block";
-
-  if(mode==="manual"){
-    document.getElementById("mode-text").innerText="Mode Manual";
-    document.getElementById("sensor-btn").style.display="none";
-  }else{
-    document.getElementById("mode-text").innerText="Mode Sensor Otomatis";
-    document.getElementById("sensor-btn").style.display="block";
-  }
-
-  renderLamp();
-}
-
-// ================= LAMPU =================
-function renderLamp(){
-  const container = document.getElementById("lamp-container");
-  container.innerHTML="";
-
-  lamps.forEach((lamp,i)=>{
-    const div = document.createElement("div");
-
-    div.innerHTML = `
-      <p>${lamp.name} - ${lamp.on ? "ON" : "OFF"}</p>
-      <button onclick="toggleLamp(${i})">Toggle</button>
-    `;
-
-    container.appendChild(div);
-  });
-
-  hitung();
-}
-
-function toggleLamp(i){
-  lamps[i].on = !lamps[i].on;
-  renderLamp();
-}
-
-// ================= SENSOR =================
-function triggerSensor(){
-  // semua nyala
-  lamps.forEach(l=>l.on=true);
-  renderLamp();
-
-  // mati otomatis
-  setTimeout(()=>{
-    lamps.forEach(l=>l.on=false);
-    renderLamp();
-  },3000);
-}
-
-// ================= HITUNG =================
-function hitung(){
-  let total=0;
-
-  lamps.forEach(l=>{
-    if(l.on){
-      total += (l.power*l.hours*DAYS/1000)*TARIFF;
+    .lamp-glow {
+      transition: all 0.5s ease;
     }
-  });
+    .lamp-on {
+      filter: drop-shadow(0 0 18px rgba(255, 214, 50, 0.8)) drop-shadow(0 0 40px rgba(255, 214, 50, 0.4));
+    }
+    .lamp-off {
+      filter: drop-shadow(0 0 2px rgba(100, 100, 100, 0.2));
+    }
+    .light-cone {
+      transition: opacity 0.5s ease;
+    }
 
-  document.getElementById("total").innerText =
-    "Total Biaya: Rp " + total.toFixed(0);
-}
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
 
-</script>
+    @keyframes flicker {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.92; }
+    }
+    .flickering {
+      animation: flicker 3s ease-in-out infinite;
+    }
 
-</body>
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-in {
+      animation: fadeInUp 0.5s ease forwards;
+    }
+    .animate-in-d1 { animation-delay: 0.1s; opacity: 0; }
+    .animate-in-d2 { animation-delay: 0.2s; opacity: 0; }
+    .animate-in-d3 { animation-delay: 0.3s; opacity: 0; }
+    .animate-in-d4 { animation-delay: 0.4s; opacity: 0; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) translateX(0px); }
+      25% { transform: translateY(-20px) translateX(10px); }
+      50% { transform: translateY(-40px) translateX(0px); }
+      75% { transform: translateY(-20px) translateX(-10px); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    @keyframes slideOutUp {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(-100vh); }
+    }
+
+    .slide-out {
+      animation: slideOutUp 0.8s ease forwards;
+    }
+
+    .card-lamp {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card-lamp:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full"><!-- Opening Screen -->
+  <div id="opening-screen" class="fixed inset-0 z-50 flex items-center justify-center" style="background:linear-gradient(135deg,#0f1729 0%,#1a2540 50%,#162035 100%);">
+   <div style="position:absolute;top:0;left:0;right:0;bottom:0;overflow:hidden;">
+    <div style="position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 20% 50%,rgba(99,179,237,0.08) 0%,transparent 50%),radial-gradient(circle at 80% 80%,rgba(255,214,50,0.06) 0%,transparent 50%);animation:float 20s ease-in-out infinite;"></div>
+   </div>
+   <div class="relative text-center px-6 max-w-md">
+    <div class="mb-6 inline-block p-4 rounded-2xl" style="background:rgba(99,179,237,0.1);border:1px solid rgba(99,179,237,0.2);"><i data-lucide="zap" style="width:48px;height:48px;color:#63b3ed;animation:pulse 2s ease-in-out infinite;"></i>
+    </div>
+    <h1 class="text-4xl md:text-5xl font-800 mb-3" style="color:#e8ecf4;line-height:1.2;">Simulasi Energi Listrik</h1>
+    <p class="text-lg mb-8" style="color:#93a8c9;">Kelola konsumsi daya lampu &amp; hitung biaya listrik ruang kelasmu</p>
+    <div class="mb-6 px-4 py-3 rounded-xl" style="background:rgba(72,187,120,0.1);border:1px solid rgba(72,187,120,0.2);">
+     <p style="color:#48bb78;font-size:13px;font-weight:600;margin-bottom:2px;">📚 Dikembangkan oleh</p>
+     <p style="color:#e8ecf4;font-size:15px;font-weight:700;">Tim Siswa Sekolah</p>
+     <p style="color:#7a8baa;font-size:12px;margin-top:4px;">Proyek 3 Ujian Sekolah</p>
+    </div><button onclick="startSimulation()" class="w-full px-6 py-3 rounded-xl font-700 text-white transition-all duration-300 hover:shadow-lg" style="background:linear-gradient(135deg,#63b3ed,#48bb78);border:none;cursor:pointer;"> Mulai Simulasi → </button>
+    <p style="color:#4a5568;font-size:12px;margin-top:6px;">Tekan tombol untuk melanjutkan</p>
+   </div>
+  </div>
+  <div id="app-wrapper" class="h-full w-full overflow-auto" style="background:linear-gradient(180deg,#0f1729 0%,#1a3340 50%,#162035 100%);display:none;">
+   <!-- Enhanced gradient background -->
+   <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:0;pointer-events:none;overflow:hidden;"><!-- Animated gradient orbs -->
+    <div style="position:absolute;top:10%;left:10%;width:400px;height:400px;background:radial-gradient(circle,rgba(99,179,237,0.1) 0%,transparent 70%);border-radius:50%;animation:float 15s ease-in-out infinite;"></div>
+    <div style="position:absolute;bottom:10%;right:5%;width:350px;height:350px;background:radial-gradient(circle,rgba(255,214,50,0.08) 0%,transparent 70%);border-radius:50%;animation:float 20s ease-in-out infinite 2s;"></div>
+    <div style="position:absolute;top:50%;left:50%;width:300px;height:300px;background:radial-gradient(circle,rgba(72,187,120,0.05) 0%,transparent 70%);border-radius:50%;animation:float 25s ease-in-out infinite 4s;"></div>
+   </div><!-- Ceiling pattern -->
+   <div style="position:fixed;top:0;left:0;right:0;height:120px;background:linear-gradient(180deg,rgba(26,37,64,0.8) 0%,transparent 100%);z-index:1;pointer-events:none;"></div>
+   <div class="relative z-10 max-w-5xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <header class="text-center mb-8 animate-in">
+     <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4" style="background:rgba(99,179,237,0.12);border:1px solid rgba(99,179,237,0.2);">
+      <i data-lucide="zap" style="width:14px;height:14px;color:#63b3ed;"></i> <span style="color:#63b3ed;font-size:12px;font-weight:600;letter-spacing:0.05em;">SIMULASI ENERGI LISTRIK</span>
+     </div>
+     <h1 id="room-title" class="text-3xl md:text-4xl font-800 mb-2" style="color:#e8ecf4;">Ruang Kelas 1A</h1>
+     <p style="color:#7a8baa;font-size:14px;">Atur daya &amp; durasi setiap lampu untuk menghitung biaya listrik bulanan</p>
+    </header><!-- Classroom Visual -->
+    <div class="rounded-2xl p-6 mb-8 animate-in animate-in-d1" style="background:linear-gradient(180deg,#162035 0%,#1a2744 100%);border:1px solid rgba(99,179,237,0.1);position:relative;overflow:hidden;">
+     <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#63b3ed,transparent);"></div><!-- Classroom ceiling with lamps -->
+     <div class="flex justify-around items-start mb-2" style="min-height:140px;position:relative;">
+      <!-- Lamp 1 -->
+      <div class="flex flex-col items-center lamp-visual" data-lamp="0">
+       <div style="width:2px;height:20px;background:#4a5568;"></div>
+       <svg class="lamp-glow lamp-off" width="64" height="48" viewbox="0 0 64 48">
+        <rect x="16" y="0" width="32" height="8" rx="2" fill="#4a5568" /> <polygon points="12,8 52,8 58,28 6,28" fill="#5a6577" /> <rect x="6" y="28" width="52" height="4" rx="1" fill="#4a5568" /> <line x1="20" y1="32" x2="20" y2="38" stroke="#ffd632" stroke-width="2" stroke-linecap="round" class="bulb-line" style="opacity:0;transition:opacity 0.5s;" /> <line x1="32" y1="32" x2="32" y2="40" stroke="#ffd632" stroke-width="2" stroke-linecap="round" class="bulb-line" style="opacity:0;transition:opacity 0.5s;" /> <line x1="44" y1="32" x2="44" y2="38" stroke="#ffd632" stroke-width="2" stroke-linecap="round" class="bulb-line" style="opacity:0;transition:opacity 0.5s;" />
+       </svg>
+       <div class="light-cone" style="opacity:0;width:120px;height:80px;background:radial-gradient(ellipse at top,rgba(255,214,50,0.15) 0%,transparent 70%);margin-top:-4px;"></div><span style="color:#7a8baa;font-size:11px;font-weight:600;margin-top:4px;">LAMPU 1</span>
+      </div><!-- Lamp 2 -->
+      <div class="flex flex-col items-center lamp-visual" data-lamp="1">
+       <div style="width:2px;height:20px;background:#4a5568;"></div>
+       <svg class="lamp-glow lamp-off" width="64" height="48" viewbox="0 0 64 48">
+        <rect x="16" y="0" width="32" height="8" rx="2" fill="#4a5568" /> <polygon points="12,8 52,8 58,28 6,28" fill="#5a6577" /> <rect x="6" y="28" width="52" height="4" rx="1" fill="#4a5568" /> <line x1="20" y1="32" x2="20" y2="38" stroke="#ffd632" stroke-width="2" stroke-linecap="round" class="bulb-line" style="opacity:0;transition:opacity 0.5s;" /> <line x1="32" y1="32" x2="32" y2="40" stroke="#ffd632" stroke-width="2" stroke-linecap="round" class="bulb-line" style="opacity:0;transition:opacity 0.5s;" /> <line x1="44" y1="32" x2="44" y2="38" stroke="#ffd632" stroke-width="2" stroke-linecap="round" class="bulb-line" style="opacity:0;transition:opacity 0.5s;" />
+       </svg>
+       <div class="light-cone" style="opacity:0;width:120px;height:80px;background:radial-gradient(ellipse at top,rgba(255,214,50,0.15) 0%,transparent 70%);margin-top:-4px;"></div><span style="color:#7a8baa;font-size:11px;font-weight:600;margin-top:4px;">LAMPU 2</span>
+      </div><!-- Lamp 3 -->
+      <div class="flex flex-col items-center lamp-visual" data-lamp="2">
+       <div style="width:2px;height:20px;background:#4a5568;"></div>
+       <svg class="lamp-glow lamp-off" width="64" height="48" viewbox="0 0 64 48">
+        <rect x="16" y="0" width="32" height="8" rx="2" fill="#4a5568" /> <polygon points="12,8 52,8 58,28 6,28" fill="#5a6577" /> <rect x="6" y="28" width="52" height="4" rx="1" fill="#4a5568" /> <line x1="20" y1="32" x2="20" y2="38" stroke="#ffd632" stroke-width="2" stroke-linecap="round" class="bulb-line" style="opacity:0;transition:opacity 0.5s;" /> <line x1="32" y1="32" x2="32" y2="40" stroke="#ffd632" stroke-width="2" stroke-linecap="round" class="bulb-line" style="opacity:0;transition:opacity 0.5s;" /> <line x1="44" y1="32" x2="44" y2="38" stroke="#ffd632" stroke-width="2" stroke-linecap="round" class="bulb-line" style="opacity:0;transition:opacity 0.5s;" />
+       </svg>
+       <div class="light-cone" style="opacity:0;width:120px;height:80px;background:radial-gradient(ellipse at top,rgba(255,214,50,0.15) 0%,transparent 70%);margin-top:-4px;"></div><span style="color:#7a8baa;font-size:11px;font-weight:600;margin-top:4px;">LAMPU 3</span>
+      </div><!-- Lamp 4 -->
+      <div class="flex flex-col items-center lamp-visual" data-lamp="3">
+       <div style="width:2px;height:20px;background:#4a5568;"></div>
+       <svg class="lamp-glow lamp-off" width="64" height="48" viewbox="0 0 64 48">
+        <rect x="16" y="0" width="32" height="8" rx="2" fill="#4a5568" /> <polygon points="12,8 52,8 58,28 6,28" fill="#5a6577" /> <rect x="6" y="28" width="52" height="4" rx="1" fill="#4a5568" /> <line x1="20" y1="32" x2="20" y2="38" stroke="#ffd632" stroke-width="2" stroke-linecap="round" class="bulb-line" style="opacity:0;transition:opacity 0.5s;" /> <line x1="32" y1="32" x2="32" y2="40" stroke="#ffd632" stroke-width="2" stroke-linecap="round" class="bulb-line" style="opacity:0;transition:opacity 0.5s;" /> <line x1="44" y1="32" x2="44" y2="38" stroke="#ffd632" stroke-width="2" stroke-linecap="round" class="bulb-line" style="opacity:0;transition:opacity 0.5s;" />
+       </svg>
+       <div class="light-cone" style="opacity:0;width:120px;height:80px;background:radial-gradient(ellipse at top,rgba(255,214,50,0.15) 0%,transparent 70%);margin-top:-4px;"></div><span style="color:#7a8baa;font-size:11px;font-weight:600;margin-top:4px;">LAMPU 4</span>
+      </div>
+     </div><!-- Floor desks hint -->
+     <div class="flex justify-center gap-4 mt-2">
+      <div class="rounded" style="width:48px;height:28px;background:rgba(74,85,104,0.25);border:1px solid rgba(74,85,104,0.3);"></div>
+      <div class="rounded" style="width:48px;height:28px;background:rgba(74,85,104,0.25);border:1px solid rgba(74,85,104,0.3);"></div>
+      <div class="rounded" style="width:48px;height:28px;background:rgba(74,85,104,0.25);border:1px solid rgba(74,85,104,0.3);"></div>
+      <div class="rounded" style="width:48px;height:28px;background:rgba(74,85,104,0.25);border:1px solid rgba(74,85,104,0.3);"></div>
+      <div class="rounded" style="width:48px;height:28px;background:rgba(74,85,104,0.25);border:1px solid rgba(74,85,104,0.3);"></div>
+      <div class="rounded" style="width:48px;height:28px;background:rgba(74,85,104,0.25);border:1px solid rgba(74,85,104,0.3);"></div>
+     </div>
+    </div><!-- Lamp Controls Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8" id="lamp-controls">
+     <!-- Generated by JS -->
+    </div><!-- Summary Section -->
+    <div class="rounded-2xl p-6 animate-in animate-in-d3" style="background:linear-gradient(135deg,#162035,#1a2744);border:1px solid rgba(99,179,237,0.15);">
+     <div style="position:relative;">
+      <div class="flex items-center gap-2 mb-5">
+       <i data-lucide="calculator" style="width:18px;height:18px;color:#63b3ed;"></i>
+       <h2 class="font-700 text-lg" style="color:#e8ecf4;">Ringkasan Perhitungan</h2>
+      </div><!-- Tariff Info -->
+      <div class="flex flex-wrap items-center gap-3 mb-5 px-4 py-3 rounded-xl" style="background:rgba(99,179,237,0.08);border:1px solid rgba(99,179,237,0.12);">
+       <i data-lucide="info" style="width:15px;height:15px;color:#63b3ed;flex-shrink:0;"></i> <span style="color:#93a8c9;font-size:13px;">Tarif Listrik PLN: <strong style="color:#e8ecf4;">Rp 1.444,70 / kWh</strong></span>
+      </div><!-- Stats Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5" id="stats-grid">
+       <div class="rounded-xl p-4 text-center" style="background:rgba(255,214,50,0.06);border:1px solid rgba(255,214,50,0.12);">
+        <p style="color:#7a8baa;font-size:11px;font-weight:600;letter-spacing:0.04em;margin-bottom:4px;">TOTAL DAYA</p>
+        <p id="stat-power" class="text-xl font-800" style="color:#ffd632;">0 W</p>
+       </div>
+       <div class="rounded-xl p-4 text-center" style="background:rgba(72,187,120,0.06);border:1px solid rgba(72,187,120,0.12);">
+        <p style="color:#7a8baa;font-size:11px;font-weight:600;letter-spacing:0.04em;margin-bottom:4px;">ENERGI / HARI</p>
+        <p id="stat-daily-kwh" class="text-xl font-800" style="color:#48bb78;">0 kWh</p>
+       </div>
+       <div class="rounded-xl p-4 text-center" style="background:rgba(99,179,237,0.06);border:1px solid rgba(99,179,237,0.12);">
+        <p style="color:#7a8baa;font-size:11px;font-weight:600;letter-spacing:0.04em;margin-bottom:4px;">ENERGI / BULAN</p>
+        <p id="stat-monthly-kwh" class="text-xl font-800" style="color:#63b3ed;">0 kWh</p>
+       </div>
+       <div class="rounded-xl p-4 text-center" style="background:rgba(237,100,166,0.06);border:1px solid rgba(237,100,166,0.12);">
+        <p style="color:#7a8baa;font-size:11px;font-weight:600;letter-spacing:0.04em;margin-bottom:4px;">BIAYA / BULAN</p>
+        <p id="stat-cost" class="text-xl font-800" style="color:#ed64a6;">Rp 0</p>
+       </div>
+      </div><!-- Detail Table -->
+      <div class="rounded-xl overflow-hidden" style="border:1px solid rgba(74,85,104,0.3);">
+       <table class="w-full" style="font-size:13px;">
+        <thead>
+         <tr style="background:rgba(74,85,104,0.2);">
+          <th class="text-left px-4 py-3 font-600" style="color:#7a8baa;">Lampu</th>
+          <th class="text-center px-3 py-3 font-600" style="color:#7a8baa;">Daya</th>
+          <th class="text-center px-3 py-3 font-600" style="color:#7a8baa;">Jam/Hari</th>
+          <th class="text-center px-3 py-3 font-600" style="color:#7a8baa;">kWh/Hari</th>
+          <th class="text-center px-3 py-3 font-600" style="color:#7a8baa;">kWh/Bulan</th>
+          <th class="text-right px-4 py-3 font-600" style="color:#7a8baa;">Biaya/Bulan</th>
+         </tr>
+        </thead>
+        <tbody id="detail-tbody">
+        </tbody>
+       </table>
+      </div><!-- Formula -->
+      <div class="mt-5 px-4 py-3 rounded-xl" style="background:rgba(74,85,104,0.12);border:1px solid rgba(74,85,104,0.2);">
+       <p style="color:#7a8baa;font-size:12px;line-height:1.7;"><i data-lucide="book-open" style="width:13px;height:13px;display:inline;vertical-align:middle;margin-right:4px;"></i> <strong style="color:#93a8c9;">Rumus:</strong> Energi (kWh) = Daya (W) × Jam × 30 hari ÷ 1000 &nbsp;|&nbsp; Biaya = Energi × Rp 1.444,70</p>
+      </div>
+     </div>
+    </div>
+    <footer class="text-center mt-8 mb-6">
+     <p style="color:#4a5568;font-size:12px;">Simulasi Energi Listrik Ruang Kelas — Tarif PLN 2024</p>
+    </footer>
+   </div>
+  </div>
+  <script>
+    // Config & defaults
+    const TARIFF = 1444.70; // Rp per kWh
+    const DAYS = 30;
+
+    const defaultConfig = {
+      room_title: 'Ruang Kelas 1A',
+      background_color: '#0f1729',
+      surface_color: '#162035',
+      text_color: '#e8ecf4',
+      accent_color: '#63b3ed',
+      highlight_color: '#ffd632',
+      font_family: 'Plus Jakarta Sans',
+      font_size: 16
+    };
+
+    // Lamp state
+    const lamps = [
+      { name: 'Lampu 1', power: 40, hours: 8, on: true },
+      { name: 'Lampu 2', power: 40, hours: 8, on: true },
+      { name: 'Lampu 3', power: 40, hours: 6, on: true },
+      { name: 'Lampu 4', power: 40, hours: 6, on: false }
+    ];
+
+    const powerOptions = [5, 10, 15, 18, 20, 25, 30, 36, 40, 45, 50, 60, 75, 100];
+
+    function formatRupiah(num) {
+      return 'Rp ' + num.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    function buildLampControls() {
+      const container = document.getElementById('lamp-controls');
+      container.innerHTML = '';
+      lamps.forEach((lamp, i) => {
+        const delayClass = `animate-in animate-in-d${i + 1}`;
+        const card = document.createElement('div');
+        card.className = `card-lamp rounded-2xl p-5 ${delayClass}`;
+        card.style.cssText = `background:linear-gradient(135deg,#1a2744,#1e2d4a);border:1px solid rgba(99,179,237,0.1);`;
+        card.id = `lamp-card-${i}`;
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:${lamp.on ? 'rgba(255,214,50,0.15)' : 'rgba(74,85,104,0.25)'};" id="lamp-icon-bg-${i}">
+                <i data-lucide="lightbulb" style="width:20px;height:20px;color:${lamp.on ? '#ffd632' : '#4a5568'};" id="lamp-icon-${i}"></i>
+              </div>
+              <div>
+                <h3 class="font-700" style="color:#e8ecf4;font-size:15px;">${lamp.name}</h3>
+                <p style="color:#7a8baa;font-size:12px;" id="lamp-status-${i}">${lamp.on ? 'Menyala' : 'Mati'}</p>
+              </div>
+            </div>
+            <button onclick="toggleLamp(${i})" class="relative w-12 h-7 rounded-full transition-all duration-300 focus:outline-none" style="background:${lamp.on ? '#48bb78' : '#4a5568'};" id="lamp-toggle-${i}" aria-label="Toggle ${lamp.name}">
+              <div class="absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all duration-300" style="left:${lamp.on ? '26px' : '2px'};"></div>
+            </button>
+          </div>
+
+          <div class="mb-4">
+            <div class="flex justify-between mb-2">
+              <label style="color:#93a8c9;font-size:12px;font-weight:600;" for="power-${i}">Daya Listrik</label>
+              <span style="color:#ffd632;font-size:13px;font-weight:700;" id="power-val-${i}">${lamp.power} W</span>
+            </div>
+            <input type="range" id="power-${i}" min="0" max="${powerOptions.length - 1}" value="${powerOptions.indexOf(lamp.power)}" oninput="updatePower(${i}, this.value)" class="w-full cursor-pointer" style="background:linear-gradient(90deg,#ffd632 ${(powerOptions.indexOf(lamp.power)/(powerOptions.length-1))*100}%,#2d3748 ${(powerOptions.indexOf(lamp.power)/(powerOptions.length-1))*100}%);">
+            <div class="flex justify-between mt-1">
+              <span style="color:#4a5568;font-size:10px;">${powerOptions[0]}W</span>
+              <span style="color:#4a5568;font-size:10px;">${powerOptions[powerOptions.length-1]}W</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between mb-2">
+              <label style="color:#93a8c9;font-size:12px;font-weight:600;" for="hours-${i}">Durasi per Hari</label>
+              <span style="color:#63b3ed;font-size:13px;font-weight:700;" id="hours-val-${i}">${lamp.hours} jam</span>
+            </div>
+            <input type="range" id="hours-${i}" min="0" max="24" value="${lamp.hours}" oninput="updateHours(${i}, this.value)" class="w-full cursor-pointer" style="background:linear-gradient(90deg,#63b3ed ${(lamp.hours/24)*100}%,#2d3748 ${(lamp.hours/24)*100}%);">
+            <div class="flex justify-between mt-1">
+              <span style="color:#4a5568;font-size:10px;">0 jam</span>
+              <span style="color:#4a5568;font-size:10px;">24 jam</span>
+            </div>
+          </div>
+
+          <div class="mt-4 px-3 py-2 rounded-lg flex justify-between" style="background:rgba(74,85,104,0.15);" id="lamp-summary-${i}">
+            <span style="color:#7a8baa;font-size:12px;">Biaya/bulan:</span>
+            <span style="color:#ed64a6;font-size:13px;font-weight:700;" id="lamp-cost-${i}">${formatRupiah(lamp.on ? (lamp.power * lamp.hours * DAYS / 1000) * TARIFF : 0)}</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    function updateVisualLamp(i) {
+      const lamp = lamps[i];
+      const visual = document.querySelectorAll('.lamp-visual')[i];
+      if (!visual) return;
+      const svg = visual.querySelector('svg');
+      const cone = visual.querySelector('.light-cone');
+      const bulbLines = visual.querySelectorAll('.bulb-line');
+
+      if (lamp.on) {
+        svg.classList.remove('lamp-off');
+        svg.classList.add('lamp-on', 'flickering');
+        cone.style.opacity = '1';
+        bulbLines.forEach(l => l.style.opacity = '1');
+      } else {
+        svg.classList.remove('lamp-on', 'flickering');
+        svg.classList.add('lamp-off');
+        cone.style.opacity = '0';
+        bulbLines.forEach(l => l.style.opacity = '0');
+      }
+    }
+
+    function toggleLamp(i) {
+      lamps[i].on = !lamps[i].on;
+      const lamp = lamps[i];
+
+      // Update toggle
+      const toggle = document.getElementById(`lamp-toggle-${i}`);
+      toggle.style.background = lamp.on ? '#48bb78' : '#4a5568';
+      toggle.firstElementChild.style.left = lamp.on ? '26px' : '2px';
+
+      // Update icon
+      const iconBg = document.getElementById(`lamp-icon-bg-${i}`);
+      iconBg.style.background = lamp.on ? 'rgba(255,214,50,0.15)' : 'rgba(74,85,104,0.25)';
+      const icon = document.getElementById(`lamp-icon-${i}`);
+      icon.style.color = lamp.on ? '#ffd632' : '#4a5568';
+
+      // Update status
+      document.getElementById(`lamp-status-${i}`).textContent = lamp.on ? 'Menyala' : 'Mati';
+
+      updateVisualLamp(i);
+      recalc();
+    }
+
+    function updatePower(i, sliderVal) {
+      lamps[i].power = powerOptions[parseInt(sliderVal)];
+      document.getElementById(`power-val-${i}`).textContent = lamps[i].power + ' W';
+      const slider = document.getElementById(`power-${i}`);
+      const pct = (sliderVal / (powerOptions.length - 1)) * 100;
+      slider.style.background = `linear-gradient(90deg,#ffd632 ${pct}%,#2d3748 ${pct}%)`;
+      recalc();
+    }
+
+    function updateHours(i, val) {
+      lamps[i].hours = parseInt(val);
+      document.getElementById(`hours-val-${i}`).textContent = lamps[i].hours + ' jam';
+      const slider = document.getElementById(`hours-${i}`);
+      const pct = (val / 24) * 100;
+      slider.style.background = `linear-gradient(90deg,#63b3ed ${pct}%,#2d3748 ${pct}%)`;
+      recalc();
+    }
+
+    function recalc() {
+      let totalPower = 0, totalDailyKwh = 0, totalMonthlyKwh = 0, totalCost = 0;
+
+      const tbody = document.getElementById('detail-tbody');
+      tbody.innerHTML = '';
+
+      lamps.forEach((lamp, i) => {
+        const activePower = lamp.on ? lamp.power : 0;
+        const dailyKwh = (activePower * lamp.hours) / 1000;
+        const monthlyKwh = dailyKwh * DAYS;
+        const cost = monthlyKwh * TARIFF;
+
+        totalPower += activePower;
+        totalDailyKwh += dailyKwh;
+        totalMonthlyKwh += monthlyKwh;
+        totalCost += cost;
+
+        // Update per-lamp cost
+        const lampCostEl = document.getElementById(`lamp-cost-${i}`);
+        if (lampCostEl) lampCostEl.textContent = formatRupiah(cost);
+
+        // Table row
+        const tr = document.createElement('tr');
+        tr.style.cssText = 'border-top:1px solid rgba(74,85,104,0.2);';
+        tr.innerHTML = `
+          <td class="px-4 py-3" style="color:${lamp.on ? '#e8ecf4' : '#4a5568'};">
+            <span class="inline-block w-2 h-2 rounded-full mr-2" style="background:${lamp.on ? '#48bb78' : '#4a5568'};"></span>
+            ${lamp.name}
+          </td>
+          <td class="text-center px-3 py-3" style="color:${lamp.on ? '#ffd632' : '#4a5568'};">${lamp.power}W</td>
+          <td class="text-center px-3 py-3" style="color:${lamp.on ? '#63b3ed' : '#4a5568'};">${lamp.hours}h</td>
+          <td class="text-center px-3 py-3" style="color:${lamp.on ? '#e8ecf4' : '#4a5568'};">${dailyKwh.toFixed(3)}</td>
+          <td class="text-center px-3 py-3" style="color:${lamp.on ? '#e8ecf4' : '#4a5568'};">${monthlyKwh.toFixed(2)}</td>
+          <td class="text-right px-4 py-3 font-600" style="color:${lamp.on ? '#ed64a6' : '#4a5568'};">${formatRupiah(cost)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Total row
+      const totalTr = document.createElement('tr');
+      totalTr.style.cssText = 'border-top:2px solid rgba(99,179,237,0.2);background:rgba(99,179,237,0.05);';
+      totalTr.innerHTML = `
+        <td class="px-4 py-3 font-700" style="color:#e8ecf4;">TOTAL</td>
+        <td class="text-center px-3 py-3 font-700" style="color:#ffd632;">${totalPower}W</td>
+        <td class="text-center px-3 py-3" style="color:#4a5568;">—</td>
+        <td class="text-center px-3 py-3 font-700" style="color:#e8ecf4;">${totalDailyKwh.toFixed(3)}</td>
+        <td class="text-center px-3 py-3 font-700" style="color:#e8ecf4;">${totalMonthlyKwh.toFixed(2)}</td>
+        <td class="text-right px-4 py-3 font-800" style="color:#ed64a6;">${formatRupiah(totalCost)}</td>
+      `;
+      tbody.appendChild(totalTr);
+
+      // Stats
+      document.getElementById('stat-power').textContent = totalPower + ' W';
+      document.getElementById('stat-daily-kwh').textContent = totalDailyKwh.toFixed(3) + ' kWh';
+      document.getElementById('stat-monthly-kwh').textContent = totalMonthlyKwh.toFixed(2) + ' kWh';
+      document.getElementById('stat-cost').textContent = formatRupiah(totalCost);
+    }
+
+    // Element SDK
+    function applyConfig(config) {
+      document.getElementById('room-title').textContent = config.room_title || defaultConfig.room_title;
+      document.getElementById('app-wrapper').style.background = config.background_color || defaultConfig.background_color;
+
+      const fontFamily = (config.font_family || defaultConfig.font_family) + ', sans-serif';
+      document.body.style.fontFamily = fontFamily;
+
+      const baseSize = config.font_size || defaultConfig.font_size;
+      document.getElementById('room-title').style.fontSize = (baseSize * 2) + 'px';
+    }
+
+    window.elementSdk.init({
+      defaultConfig,
+      onConfigChange: async (config) => { applyConfig(config); },
+      mapToCapabilities: (config) => ({
+        recolorables: [
+          { get: () => config.background_color || defaultConfig.background_color, set: (v) => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); } },
+          { get: () => config.surface_color || defaultConfig.surface_color, set: (v) => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
+          { get: () => config.text_color || defaultConfig.text_color, set: (v) => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
+          { get: () => config.accent_color || defaultConfig.accent_color, set: (v) => { config.accent_color = v; window.elementSdk.setConfig({ accent_color: v }); } },
+          { get: () => config.highlight_color || defaultConfig.highlight_color, set: (v) => { config.highlight_color = v; window.elementSdk.setConfig({ highlight_color: v }); } }
+        ],
+        borderables: [],
+        fontEditable: {
+          get: () => config.font_family || defaultConfig.font_family,
+          set: (v) => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
+        },
+        fontSizeable: {
+          get: () => config.font_size || defaultConfig.font_size,
+          set: (v) => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); }
+        }
+      }),
+      mapToEditPanelValues: (config) => new Map([
+        ['room_title', config.room_title || defaultConfig.room_title]
+      ])
+    });
+
+    // Init
+    buildLampControls();
+    lamps.forEach((_, i) => updateVisualLamp(i));
+    recalc();
+    lucide.createIcons();
+
+    function startSimulation() {
+      const openingScreen = document.getElementById('opening-screen');
+      const appWrapper = document.getElementById('app-wrapper');
+      openingScreen.classList.add('slide-out');
+      setTimeout(() => {
+        openingScreen.style.display = 'none';
+        appWrapper.style.display = 'block';
+        lucide.createIcons();
+      }, 800);
+    }
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9dd840dae1f7fd18',t:'MTc3MzcxMTI0Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
